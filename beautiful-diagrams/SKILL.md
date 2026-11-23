@@ -1,6 +1,6 @@
 ---
 name: beautiful-diagrams
-description: Create publication-grade mathematical and geometric diagrams in Keenan Crane's visual style using 3D-first projection, strict stroke hierarchy, muted pastel shading with soft cast shadows, white-halo labels, and clean Python/matplotlib or inline SVG implementations.
+description: Create publication-grade mathematical and geometric diagrams in Keenan Crane's visual style, computed from real 3D geometry with a strict stroke hierarchy, pastel matte shading, soft shadows and haloed labels. Includes figkit.py, a matplotlib kit that implements the rules. Use when drawing any geometric, mathematical, robotics or technical figure, or a data plot that must match such figures.
 ---
 
 # Beautiful Diagrams (Keenan Crane & SIGGRAPH Style)
@@ -50,58 +50,62 @@ Keep surface fills light, matte, and low-saturation so dark ink strokes and math
 
 ## 4. Labeling & Typography
 
-- **Match the document font:** Use `Linux Libertine` / `EB Garamond` / `Source Serif 4` (italic for math symbols like $f$, $M$, $T_p M$) and `Linux Biolinum` / `Source Sans 3` for clean text callouts and axis annotations.
+- **Match the document font:** Use `Linux Libertine` / `EB Garamond` / `Source Serif 4` (italic for math symbols like $f$, $M$, $T_p M$) and `Linux Biolinum` / `Source Sans 3` for clean text callouts and axis annotations. Export the text as outlines unless the SVG is inlined in a page that loads those fonts.
+- **One role per colour, held across the whole document:** ink for structure, indigo for the main object or the good path, terracotta for the contrast, error or failure, teal for a third role.
 - **Local placement ("Too far, Too close, Just Right"):** Keep labels roughly `4px` to `8px` from their target vertex, edge, or vector tip. Never touch or overlap the stroke, and never drift so far that association is ambiguous.
 - **Optical centering:** Center labels inside regions or at arrow midpoints visually, accounting for ascenders, descenders, and subscripts.
 - **White-halo occlusion clearance:** Whenever a label crosses a line or sits over a shaded region, add a background-matching halo (`#fdfcf8` for warm paper or `#ffffff` for white) so lines break cleanly around the text without erasing underlying geometry.
   - **SVG:** `paint-order: stroke fill; stroke: #fdfcf8; stroke-width: 4px; stroke-linejoin: round;`
   - **Matplotlib:** `path_effects=[pe.withStroke(linewidth=3.8, foreground="#fdfcf8")]`
 
-## 5. Python (`matplotlib`) Implementation Pattern
+## 5. Python Implementation: `figkit.py`
 
-Use explicit 3D camera projection and painter's sorting in 2D `Axes` rather than `mpl_toolkits.mplot3d` defaults, which distort depth sorting and lack clean SVG layering.
+`figkit.py` in this directory implements the rules above on top of `matplotlib`. Copy it, with `fonts/`, into the project's `tools/` directory. Do not use `mpl_toolkits.mplot3d`: its depth sorting is wrong for intersecting objects and it cannot produce the stroke tiers.
 
 ```python
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.patheffects as pe
-from matplotlib.collections import PolyCollection, LineCollection
+from figkit import Scene, INDIGO, TERRACOTTA, great_circle, geodesic, unit
 
-plt.rcParams.update({
-    "svg.fonttype": "none",          # Keep text editable/selectable in SVG
-    "font.family": "serif",
-    "mathtext.fontset": "stix",
-})
-
-def project_ortho(pts, azim_deg=-35, elev_deg=24):
-    az, el = np.radians(azim_deg), np.radians(elev_deg)
-    Rz = np.array([[np.cos(az), -np.sin(az), 0],
-                   [np.sin(az),  np.cos(az), 0],
-                   [0, 0, 1]])
-    Rx = np.array([[1, 0, 0],
-                   [0, np.cos(el), -np.sin(el)],
-                   [0, np.sin(el),  np.cos(el)]])
-    R = Rx @ Rz
-    p_cam = pts @ R.T
-    return p_cam[:, :2], p_cam[:, 2]  # (xy_2d, depth_z)
-
-def add_halo_label(ax, x, y, text, color="#1a1a1a", bg="#fdfcf8", size=11):
-    ax.text(
-        x, y, text, color=color, fontsize=size,
-        ha="center", va="center", zorder=50,
-        path_effects=[pe.withStroke(linewidth=4.0, foreground=bg)],
-    )
+s = Scene(width=6.4, height=3.6, azim=-32, elev=20)   # an explicit orthographic camera
+s.shadow((0, 0, -1.1), 1.0)                            # soft cast shadow on the ground
+s.sphere((0, 0, 0), 1.0)                               # matte shading + vector silhouette
+s.sphere_curve(great_circle((0, 0, 1)))                # solid in front, dashed behind
+q = unit([0.8, -0.6, 0.12])
+s.tangent_plane(1.002 * q, size=0.4)
+s.arrow(q, q + 0.36 * unit([0, 0, 1]), color=INDIGO)
+s.label(q, r"$q$", dx=9, dy=-10)                       # offset in points, paper halo
+s.save("figures/ch01-example.svg")
 ```
 
-### Painter's Order & Silhouette Extraction Checklist
+What the kit provides:
 
-1. Project all vertices `(xy, z) = project_ortho(V)` and compute per-triangle mean depth `z_tri`.
-2. Sort triangles back-to-front (`np.argsort(z_tri)`) and compute Lambertian shading `max(0.15, dot(n, light_dir))` blended into the pastel base color.
-3. Draw ground cast shadow polygons at `zorder=1` (`alpha=0.18`, `#1b1f8a` or `#2c3248`).
-4. Draw occluded/hidden dashed curves at `zorder=5` (`linestyle=(0, (4, 3))`, `linewidth=0.9`, `alpha=0.55`).
-5. Draw sorted surface `PolyCollection` at `zorder=10` with subtle edge strokes (`linewidth=0.3`, matching fill or faint `#4a5568` at `alpha=0.25`).
-6. Extract silhouette edges (where adjacent triangles have opposite `dot(n, view_dir)` signs) and draw at `zorder=20` (`linewidth=2.3`, `capstyle="round"`).
-7. Draw primary vectors/arrows (`zorder=30`) and white-halo labels (`zorder=50`).
+| Call | What it does |
+| :-- | :-- |
+| `Scene(azim, elev)` | Orthographic camera. `project`, `depth`, `point_visible`. Limits are fitted to what was drawn. |
+| `sphere` | Analytic normals, Lambert shading rendered to an embedded raster, exact circular silhouette as a vector stroke. Optional transparency for showing an interior. |
+| `sphere_curve` | Splits a curve on a sphere into front and back by the sign of its depth. Front is solid, back is dashed and faded. |
+| `ribbons` | Space curves that pass over and under each other (rings, linkages, knots). Pieces are depth-sorted and drawn over a paper understroke so the nearer strand visibly breaks the farther one. |
+| `patch`, `tangent_plane` | Flat translucent polygons from 3D corners. |
+| `arrow`, `frame`, `dot` | Vectors with filled heads sized in scene units, triads, markers (hollow for hidden points). |
+| `label`, `text2d` | Labels in outlined text with a paper-coloured halo. |
+| `shadow` | Soft radial shadow, squashed by the camera elevation. |
+| `new_plot`, `style_axes`, `halo` | Data plots in the same palette, weights and fonts. |
+| `rot`, `hat`, `unit`, `great_circle`, `small_circle`, `geodesic` | Geometry helpers. |
+
+### Rules the kit encodes, and why
+
+- **Text is exported as outlines** (`svg.fonttype = "path"`). An SVG placed with `<img>` cannot load web fonts, so live text falls back to a default face and the figure no longer matches the page. Outlines look the same in every browser and in print. Use live text (`"none"`) only for SVG inlined into a page that is guaranteed to have the fonts.
+- **The document's fonts are bundled** (`fonts/`, EB Garamond and Source Sans 3, both SIL OFL) and wired into mathtext, so `$T_qS^2$` in a label matches the prose. Words that are not mathematics use the sans face at 9 to 10 pt.
+- **Shading is raster, lines are vector.** A sphere shaded with thousands of polygons makes a huge SVG with visible seams. One small embedded image under vector strokes is smaller and cleaner.
+- **Visibility is computed.** On a sphere, a point faces the camera when `(p - center) . view >= 0`. For curves in space, sort short pieces by depth.
+- **Output is deterministic** (fixed hash salt, no date), so regenerated figures do not churn version control.
+
+### Composing a scene
+
+1. Decide the one question the figure answers. Write the caption first.
+2. Choose the camera so that nothing important is edge-on or on the silhouette. For a plane, keep the view direction within about 60° of its normal. For a point on a sphere, keep it well inside the front hemisphere.
+3. Place geometry, then vectors, then labels. Offset labels with `dx`, `dy` in points.
+4. **Render and look.** Rasterise the SVG and inspect it at the size it will be printed. Check for: labels on top of strokes, labels clipped at the edge, planes seen edge-on, arrows hidden under surfaces, two objects overlapping by accident, a hidden line drawn solid.
+5. Fix and repeat. The first render is never right.
 
 ## 6. Clean Inline SVG Pattern (Web Textbooks)
 
