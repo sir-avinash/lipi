@@ -432,3 +432,22 @@ def ease(t):
 def phase(t, start, end):
     """Progress of a sub-interval [start, end] of the timeline, clipped to [0, 1]."""
     return float(np.clip((t - start) / (end - start), 0.0, 1.0))
+
+
+def quadrotor(scene, x, R, arm=0.5, color=INK, lw=1.9, dashed=False, zorder=34):
+    """A quadrotor drawn from its real pose, the same way in every chapter.
+
+    Two arms along the body axes R e_1 and R e_2, and four rotor rings of radius
+    0.36 arm in the plane of the arms. `dashed=True` draws a desired pose.
+    """
+    x, R = np.asarray(x, float), np.asarray(R, float)
+    kw = dict(color=color, alpha=1.0, zorder=zorder)
+    if dashed:
+        kw["linestyle"] = DASH
+    th = np.linspace(0, 2 * np.pi, 48)
+    for d in (R[:, 0], R[:, 1]):
+        scene.curve(np.array([x - arm * d, x + arm * d]), lw=lw, **kw)
+    for d in (R[:, 0], -R[:, 0], R[:, 1], -R[:, 1]):
+        c = x + arm * d + 0.04 * arm * R[:, 2]
+        ring = c + 0.36 * arm * (np.outer(np.cos(th), R[:, 0]) + np.outer(np.sin(th), R[:, 1]))
+        scene.curve(ring, lw=0.55 * lw, **kw)
