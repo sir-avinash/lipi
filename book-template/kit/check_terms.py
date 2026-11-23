@@ -28,7 +28,8 @@ Text between a line containing `terms:off` and the next line containing
 `terms:on` is never checked. Write the markers as comments
 (`<!-- terms:off -->` in Markdown, `# terms:off` in Python). The glossary uses
 them around its table of banned variants, and a chapter may use them around a
-quotation that has to keep its original wording.
+quotation that has to keep its original wording. Epigraph lines in a chapter's
+front matter are skipped for the same reason.
 """
 from __future__ import annotations
 
@@ -48,6 +49,7 @@ SOURCES = {
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]+\$", re.S)
 CODE = re.compile(r"```.*?```|`[^`\n]+`", re.S)
 OFF = re.compile(r"^[^\n]*terms:off.*?(?:^[^\n]*terms:on[^\n]*$|\Z)", re.S | re.M)
+QUOTE = re.compile(r"^epigraph(?:_source)?:[^\n]*$", re.M)  # a quotation keeps its own wording
 
 
 def spans(text: str, regex: re.Pattern) -> list[tuple[int, int]]:
@@ -71,7 +73,7 @@ def main() -> None:
                 is_markdown = path.suffix == ".md"
                 math = spans(text, MATH)
                 code = spans(text, CODE) if is_markdown else []
-                off = spans(text, OFF)
+                off = spans(text, OFF) + spans(text, QUOTE)
                 for m in regex.finditer(text):
                     if inside(m.start(), off):
                         continue
