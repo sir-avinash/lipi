@@ -1,0 +1,25 @@
+title = "Title of the Book"
+subtitle = "One line under the title on the landing page"
+repo = "owner/repository"        # used for notebook and source links
+branch = "main"
+index = "chapters/index.md"      # landing-page text
+
+# TeX macros available in every chapter.
+[macros]
+"\\R" = "\\mathbb{R}"
+"\\T" = "^{\\top}"
+"\\tr" = "\\operatorname{tr}"
+
+# Parts in order. A chapter with a `file` is built. One without is listed as planned.
+[[part]]
+title = "I. Foundations"
+chapter = [
+  { num = 1, file = "chapters/ch01_first.md", title = "First chapter" },
+  { num = 2, title = "A planned chapter" },
+]
+
+[[part]]
+title = "II. Methods"
+chapter = [
+  { num = 3, file = "chapters/ch03_third.md", title = "Third chapter" },
+]

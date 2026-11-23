@@ -1,0 +1,6 @@
+{
+  "name": "book-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": { "katex": "^0.16.11" }
+}
