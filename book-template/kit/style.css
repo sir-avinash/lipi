@@ -1,3 +1,4 @@
+/* Book stylesheet. Source of truth: lipi/book-template/kit/style.css */
 :root {
   --paper: #fdfcf8;
   --ink: #1e242b;
@@ -91,7 +92,7 @@ blockquote {
   margin: 1.4rem 0; padding: 0 0 0 1.2rem; border-left: 2px solid var(--border);
   font-style: italic; color: #3a4048;
 }
-.epigraph { margin: 2rem 0 0 auto; padding: 0; border: 0; max-width: 27rem; text-align: right; font-style: italic; font-size: 1.04rem; line-height: 1.5; color: #3a4048; }
+.epigraph { margin: 1.8rem 0 0; padding: 0; border: 0; max-width: var(--measure); text-align: left; font-style: italic; font-size: 1rem; line-height: 1.5; color: #3a4048; }
 .epigraph p { margin: 0 0 0.35rem; }
 .epigraph footer { font-family: var(--sans); font-style: normal; font-size: 0.74rem; color: var(--muted); letter-spacing: 0.01em; }
 .epigraph footer em { font-style: italic; }
