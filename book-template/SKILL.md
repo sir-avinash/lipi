@@ -87,6 +87,8 @@ See [](#thm2-name) and equation [](#eq2-name). ^[A sidenote.]
 - An empty link `[](#label)` becomes "Theorem 2.3", "(2.4)", "Figure 2.1", "Section 2.2", "Table 2.1" or "Chapter 2", and points to the right file.
 - Only labelled equations are numbered.
 - Tables are numbered by wrapping them in `::: {.table #tbl2-name}`.
+- An animated figure names the still for print and the GIF for the screen: `![Caption.](figures/x-strip.png){#fig2-x anim="figures/x.gif"}`. Readers who prefer reduced motion get the still.
+- A chapter may carry a verified quotation: `epigraph:` and `epigraph_source:` in front matter.
 - Remarks and warnings can be referenced too: `[the pitfall](#warn2-name)`.
 - A chapter entry in `book.toml` whose `num` is a string (`"A"`) is an appendix.
 - A reference carries its own name. Write `[](#ch-x)`, not `Chapter [](#ch-x)`.

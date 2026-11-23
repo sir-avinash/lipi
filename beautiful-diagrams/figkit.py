@@ -296,6 +296,18 @@ class Scene:
         self.project(points)
 
     # -- output
+    def finalize(self, pad=0.12):
+        """Fix the canvas limits. Called by save() and by animate()."""
+        xlim, ylim = self._lims
+        if xlim is None or ylim is None:
+            allpts = np.vstack(self._pts)
+            lo, hi = allpts.min(axis=0) - pad, allpts.max(axis=0) + pad
+            xlim = xlim or (lo[0], hi[0])
+            ylim = ylim or (lo[1], hi[1])
+        self.ax.set_xlim(*xlim)
+        self.ax.set_ylim(*ylim)
+        return self.fig
+
     def save(self, path, pad=0.12):
         xlim, ylim = self._lims
         if xlim is None or ylim is None:
@@ -339,3 +351,84 @@ def save(fig, path):
     fig.savefig(path, format="svg", transparent=True, dpi=220, metadata={"Date": None})
     plt.close(fig)
     print(f"wrote {path}")
+
+
+# -------------------------------------------------------------- animation
+def _render(obj, width_px):
+    """Rasterise a Scene or a Figure to an RGBA image of the given pixel width."""
+    import io
+
+    from PIL import Image
+
+    fig = obj.finalize() if isinstance(obj, Scene) else obj
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", transparent=True, dpi=width_px / fig.get_figwidth())
+    plt.close(fig)
+    buf.seek(0)
+    return Image.open(buf).convert("RGBA")
+
+
+def animate(make_frame, gif_path, strip_path, n=72, fps=12, width_px=640,
+            stills=(0.0, 0.34, 0.67, 1.0), hold=1.2, strip_px=560, strip_cols=None, colors=128):
+    """One piece of code, two assets: a looping GIF for the web and a filmstrip for print.
+
+    `make_frame(t)` builds and returns a Scene (or a matplotlib Figure) for
+    t in [0, 1]. It must not save or close it. Give every frame the SAME canvas:
+    pass fixed `xlim` and `ylim` to Scene, or the picture will jitter.
+
+    The GIF plays the n frames at `fps` and holds the last one for `hold`
+    seconds. The strip tiles the frames at the times in `stills` on a transparent
+    background, for the PDF and for readers who turn motion off. Wide frames read
+    better in a grid: set `strip_cols=2`.
+    A frame that should carry a caption ("step 2: turn about z") draws it itself.
+    """
+    from PIL import Image
+
+    gif_path, strip_path = Path(gif_path), Path(strip_path)
+    gif_path.parent.mkdir(parents=True, exist_ok=True)
+    paper = Image.new("RGBA", (1, 1), PAPER)
+
+    frames = []
+    for i in range(n):
+        img = _render(make_frame(i / (n - 1)), width_px)
+        flat = Image.new("RGBA", img.size, paper.getpixel((0, 0)))
+        flat.alpha_composite(img)
+        frames.append(flat.convert("RGB"))
+    # One palette for the whole loop, taken from a montage of sampled frames, so colours do not flicker.
+    sample = frames[:: max(1, n // 8)]
+    # Accent colours cover few pixels, so a median cut would drop them. Give each a swatch.
+    accents = [INK, INDIGO, TERRACOTTA, TEAL, OCHRE, MUTED, PAPER]
+    swatch = sample[0].height // 2
+    montage = Image.new("RGB", (sample[0].width, sample[0].height * len(sample) + swatch * len(accents)))
+    for k, fr in enumerate(sample):
+        montage.paste(fr, (0, k * fr.height))
+    for k, col in enumerate(accents):
+        montage.paste(Image.new("RGB", (sample[0].width, swatch), col), (0, sample[0].height * len(sample) + k * swatch))
+    palette = montage.quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    quantized = [fr.quantize(palette=palette, dither=Image.Dither.FLOYDSTEINBERG) for fr in frames]
+    durations = [int(1000 / fps)] * n
+    durations[-1] = int(1000 * hold)
+    quantized[0].save(gif_path, save_all=True, append_images=quantized[1:], duration=durations,
+                      loop=0, optimize=True, disposal=1)
+
+    panels = [_render(make_frame(t), strip_px) for t in stills]
+    gap = strip_px // 28
+    cols = strip_cols or len(panels)
+    rows = -(-len(panels) // cols)
+    w, h = panels[0].size
+    strip = Image.new("RGBA", (cols * w + gap * (cols - 1), rows * h + gap * (rows - 1)), (0, 0, 0, 0))
+    for k, p in enumerate(panels):
+        strip.alpha_composite(p, ((k % cols) * (w + gap), (k // cols) * (h + gap)))
+    strip.save(strip_path, optimize=True)
+    print(f"wrote {gif_path} ({gif_path.stat().st_size / 1e6:.1f} MB, {n} frames) and {strip_path}")
+
+
+def ease(t):
+    """Smooth start and stop for a motion parameter in [0, 1]."""
+    t = np.clip(t, 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def phase(t, start, end):
+    """Progress of a sub-interval [start, end] of the timeline, clipped to [0, 1]."""
+    return float(np.clip((t - start) / (end - start), 0.0, 1.0))

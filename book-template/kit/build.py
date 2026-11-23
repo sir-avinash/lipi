@@ -155,12 +155,17 @@ def chapter_main(ch: dict, prev: dict | None, nxt: dict | None, cfg: dict) -> st
         f'<div class="running-head">{ch["num"]}. {esc(ch["nav_plain"])}</div>'
         f'<article class="chapter" id="{ch["id"]}">'
         f'<header class="chapter-head"><div class="chapter-num">{ch["kind"]} {ch["num"]}</div>'
-        f'<h1>{ch["title_html"]}</h1>{assets}</header>'
+        f'<h1>{ch["title_html"]}</h1>{assets}{ch.get("epigraph_html", "")}</header>'
         f'{ch["body"]}</article>{foot}')
 
 
 def main() -> None:
     cfg = tomllib.loads((ROOT / "book.toml").read_text(encoding="utf-8"))
+    if "branch" not in cfg:
+        # Link notebooks, scripts and skills on the branch being built, so the links are never dead.
+        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--abbrev-ref", "HEAD"],
+                              capture_output=True, text=True).stdout.strip()
+        cfg["branch"] = os.environ.get("BOOK_BRANCH") or (head if head and head != "HEAD" else "main")
     tmp = Path(tempfile.mkdtemp(prefix="bookbuild-"))
     macros_path = tmp / "macros.json"
     macros_path.write_text(json.dumps(cfg.get("macros", {})), encoding="utf-8")
@@ -176,6 +181,9 @@ def main() -> None:
     for part in cfg["part"]:
         for ch in part["chapter"]:
             if "file" not in ch or (only and isinstance(ch["num"], int) and ch["num"] not in only):
+                continue
+            if not (ROOT / ch["file"]).exists():
+                print(f'note: {ch["file"]} not written yet; listed as planned', file=sys.stderr)
                 continue
             meta, body = split_front_matter((ROOT / ch["file"]).read_text(encoding="utf-8"))
             num = ch["num"]
@@ -219,6 +227,9 @@ def main() -> None:
         ch["title_html"] = inline_md(ch["title"], macros_path, tmp)
         ch["nav_plain"] = ch.get("short", re.sub(r"[$\\{}]", "", ch["title"]))
         ch["nav_title"] = inline_md(ch.get("short", ch["title"]), macros_path, tmp)
+        if ch.get("epigraph"):
+            source = f'<footer>{inline_md(ch["epigraph_source"], macros_path, tmp)}</footer>' if ch.get("epigraph_source") else ""
+            ch["epigraph_html"] = f'<blockquote class="epigraph"><p>{inline_md(ch["epigraph"], macros_path, tmp)}</p>{source}</blockquote>'
 
     if OUT.exists():
         shutil.rmtree(OUT)
@@ -232,8 +243,9 @@ def main() -> None:
         shutil.copy(font, OUT / "assets" / "katex" / "fonts")
     if (ROOT / "figures").exists():
         (OUT / "figures").mkdir()
-        for fig in (ROOT / "figures").glob("*.svg"):
-            shutil.copy(fig, OUT / "figures")
+        for pattern in ("*.svg", "*.png", "*.gif"):
+            for fig in (ROOT / "figures").glob(pattern):
+                shutil.copy(fig, OUT / "figures")
 
     book_title = esc(cfg["title"])
     for i, ch in enumerate(chapters):
@@ -273,7 +285,7 @@ def main() -> None:
     # Single-page edition for printing to PDF.
     whole = "".join(
         f'<article class="chapter" id="{ch["id"]}"><header class="chapter-head">'
-        f'<div class="chapter-num">{ch["kind"]} {ch["num"]}</div><h1>{ch["title_html"]}</h1></header>'
+        f'<div class="chapter-num">{ch["kind"]} {ch["num"]}</div><h1>{ch["title_html"]}</h1>{ch.get("epigraph_html", "")}</header>'
         f'{ch["body_single"]}</article>' for ch in chapters)
     (OUT / "book.html").write_text(PAGE.format(
         title=book_title, book_title=book_title, body_class="single-page",

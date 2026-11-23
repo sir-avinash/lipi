@@ -91,6 +91,10 @@ blockquote {
   margin: 1.4rem 0; padding: 0 0 0 1.2rem; border-left: 2px solid var(--border);
   font-style: italic; color: #3a4048;
 }
+.epigraph { margin: 2rem 0 0 auto; padding: 0; border: 0; max-width: 27rem; text-align: right; font-style: italic; font-size: 1.04rem; line-height: 1.5; color: #3a4048; }
+.epigraph p { margin: 0 0 0.35rem; }
+.epigraph footer { font-family: var(--sans); font-style: normal; font-size: 0.74rem; color: var(--muted); letter-spacing: 0.01em; }
+.epigraph footer em { font-style: italic; }
 hr { border: 0; border-top: 1px solid var(--border); margin: 2.4rem 0; }
 
 /* ---------- math ---------- */
@@ -127,6 +131,11 @@ code.math-error { color: #b3261e; }
 /* ---------- figures, tables, code ---------- */
 figure { margin: 2rem 0; scroll-margin-top: 2rem; }
 figure img { display: block; width: 100%; height: auto; }
+figure img.still { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  figure img.anim { display: none; }
+  figure img.still { display: block; }
+}
 figcaption, caption {
   font-family: var(--sans); font-size: 0.8rem; line-height: 1.45; color: #3f4651;
   margin-top: 0.6rem; text-align: left; caption-side: bottom;
@@ -200,6 +209,8 @@ ol.toc li.planned em { font-family: var(--sans); font-size: 0.68rem; margin-left
   main { margin: 0; padding: 0; max-width: none; }
   main > *, article > * { max-width: none; }
   .book-title { margin: 30vh 0 0; break-after: page; }
+  figure img.anim { display: none !important; }
+  figure img.still { display: block !important; }
   figure img { max-height: 80mm; width: auto; max-width: 100%; margin: 0 auto; }
   .env, figure, .math-display, table { break-inside: avoid; }
   h2, h3 { break-after: avoid; }

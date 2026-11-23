@@ -13,11 +13,12 @@ A chapter is absorbing when the reader always has an open question they care abo
    > Your robot's heading is 350°. You want it at 10°. What is the error?
 2. **Concrete before general.** One dimension before three. A number before a formula. A picture before a definition. State the theorem after the reader could have guessed it.
 3. **Let thought experiments carry the hard ideas.** Something the reader can do in their head or with their hands: nested rings, a plate on a palm, two labs with differently mounted cameras. Name each one. A good thought experiment makes the abstract statement feel like a summary.
-4. **Give each definition a job before it arrives.** Show the failure it prevents or the question it answers, then define it.
-5. **Read every formula aloud once.** After a display, say what each piece does in plain words. "A height, zero at the target, rising to 2 at half a turn away."
-6. **End each section with a reason to read the next.** A question, an unexplained piece, a failure of what was just built.
-7. **Be honest about limits.** Say what a result does not give. Readers trust a text that tells them where it stops working.
-8. **Close with work, then sources.** Exercises that ask for a derivation, an experiment or a counterexample. Then two or three sentences on who did what, and a reference list.
+4. **Show motion as motion.** If a thought experiment is about something turning, flowing or converging, give it an animation on the web and a filmstrip in print. Open the chapter with a picture of its puzzle.
+5. **Give each definition a job before it arrives.** Show the failure it prevents or the question it answers, then define it.
+6. **Read every formula aloud once.** After a display, say what each piece does in plain words. "A height, zero at the target, rising to 2 at half a turn away."
+7. **End each section with a reason to read the next.** A question, an unexplained piece, a failure of what was just built.
+8. **Be honest about limits.** Say what a result does not give. Readers trust a text that tells them where it stops working.
+9. **Close with work, then sources.** Exercises that ask for a derivation, an experiment or a counterexample. Then two or three sentences on who did what, and a reference list.
 
 ## Sentences
 
@@ -45,7 +46,7 @@ A chapter is absorbing when the reader always has an open question they care abo
 - Runs of definitions with no example between them.
 - Adjectives doing the work of evidence: "elegant", "powerful", "fundamental".
 - Claims of global or optimal behaviour stated more strongly than the theorem.
-- Citations you cannot identify precisely. Quotes you cannot source.
+- Citations you cannot identify precisely. Quotes you cannot source: an epigraph is checked against the primary text or a sourced reference before it is used.
 - Any mention of how the text was produced.
 
 ## Rewriting an existing draft

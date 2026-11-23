@@ -1,6 +1,6 @@
 ---
 name: beautiful-diagrams
-description: Create publication-grade mathematical and geometric diagrams in Keenan Crane's visual style, computed from real 3D geometry with a strict stroke hierarchy, pastel matte shading, soft shadows and haloed labels. Includes figkit.py, a matplotlib kit that implements the rules. Use when drawing any geometric, mathematical, robotics or technical figure, or a data plot that must match such figures.
+description: Create publication-grade mathematical and geometric diagrams in Keenan Crane's visual style, computed from real 3D geometry with a strict stroke hierarchy, pastel matte shading, soft shadows and haloed labels. Includes figkit.py, a matplotlib kit that implements the rules and renders animations (GIF for the web, filmstrip for print) from one function. Use when drawing any geometric, mathematical, robotics or technical figure, or a data plot that must match such figures.
 ---
 
 # Beautiful Diagrams (Keenan Crane & SIGGRAPH Style)
@@ -109,7 +109,38 @@ What the kit provides:
 6. **Render and look.** Rasterise the SVG and inspect it at the size it will be printed. Check for: labels on top of strokes, labels clipped at the edge, planes seen edge-on, arrows hidden under surfaces, two objects overlapping by accident, a hidden line drawn solid.
 7. Fix and repeat. The first render is never right.
 
-## 6. Clean Inline SVG Pattern (Web Textbooks)
+## 6. Animation: one function, two assets
+
+When the idea is a motion (a rotation carried out, a field being combed, a trajectory converging, an optimizer iterating), draw it as motion. `figkit.animate` turns one `make_frame(t)` function into a looping GIF for the web and a filmstrip of key frames for print and for readers who turn motion off.
+
+```python
+from figkit import Scene, animate, ease, phase
+
+def frame(t):                                   # t runs from 0 to 1
+    s = Scene(width=6.6, height=3.5, azim=-30, elev=20,
+              xlim=(-4.0, 1.8), ylim=(-1.6, 1.5))  # fixed canvas: no jitter
+    turn = ease(phase(t, 0.0, 0.4))             # a sub-interval of the timeline, eased
+    ...
+    s.text2d(0.0, -1.44, "comb it flat: two cowlicks")   # say what is happening now
+    return s                                    # do not save or close it
+
+animate(frame, "figures/ch02-comb.gif", "figures/ch02-comb-strip.png",
+        n=96, fps=14, stills=(0.16, 0.45, 0.8, 1.0), strip_cols=2)
+```
+
+In the book: `![Caption.](figures/ch02-comb-strip.png){#fig2-comb anim="figures/ch02-comb.gif"}`. The page shows the GIF on screen and the strip in print.
+
+An animation has to earn the reader's attention:
+
+- **One idea, with a beginning and an end.** Storyboard it in three or four beats, and give each beat a slice of the timeline with `phase`.
+- **A caption inside every frame** that says what is happening now. The reader may arrive mid-loop.
+- **Eased motion** (`ease`), and a hold on the last frame so the conclusion can be read.
+- **Computed, not staged.** Drive it from the same simulation or geometry that the text verifies. If a marker shows a zero of a field, find the zero numerically in each frame.
+- **Same visual language as the stills.** Same palette, strokes and fonts. Hidden things hollow or dashed.
+- **Small.** 600 to 760 px wide, 70 to 100 frames, under about 2.5 MB. The kit builds one palette for the whole loop and reserves entries for the accent colours, which a plain median cut would wash out.
+- **Check it.** Look at the filmstrip and at two or three frames pulled from the GIF. Colour and label problems show up there.
+
+## 7. Clean Inline SVG Pattern (Web Textbooks)
 
 Structure inline `<svg>` elements in strict back-to-front `<g>` layers with reusable `<defs>` for gradients, markers, and halo styles.
 

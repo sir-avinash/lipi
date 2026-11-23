@@ -154,7 +154,23 @@ local function handle_div(d)
   return d
 end
 
+local function animate_figure(f)
+  -- A figure whose image carries anim="file.gif" shows the animation on screen
+  -- and the still image in print and for readers who prefer reduced motion.
+  return f:walk({
+    Image = function(img)
+      local anim = img.attributes["anim"]
+      if not anim then return nil end
+      local alt = pandoc.utils.stringify(img.caption):gsub('"', "&quot;")
+      return pandoc.RawInline("html",
+        '<img src="' .. anim .. '" class="anim" alt="' .. alt .. '" loading="lazy" />' ..
+        '<img src="' .. img.src .. '" class="still" alt="' .. alt .. '" />')
+    end,
+  })
+end
+
 local function handle_figure(f)
+  f = animate_figure(f)
   local num = nextnum("figure")
   register(f.identifier, "Figure\u{00a0}" .. num)
   local head = {pandoc.Strong({pandoc.Str("Figure\u{00a0}" .. num .. ".")}), pandoc.Space()}
