@@ -86,6 +86,8 @@ What the kit provides:
 | `ribbons` | Space curves that pass over and under each other (rings, linkages, knots). Pieces are depth-sorted and drawn over a paper understroke so the nearer strand visibly breaks the farther one. |
 | `patch`, `tangent_plane` | Flat translucent polygons from 3D corners. |
 | `arrow`, `frame`, `dot` | Vectors with filled heads sized in scene units, triads, markers (hollow for hidden points). |
+| `box`, `axis_through_box`, `quadrotor` | Rigid bodies: a shaded convex box that draws only camera-facing faces, an arrow through it with correct occlusion, and one standard quadrotor. |
+| `caption` | The line inside an animation frame that says what is happening now. |
 | `label`, `text2d`, `pad_to` | Labels in outlined text with a paper-coloured halo. `pad_to` grows the canvas for wide labels. |
 | `shadow` | Soft radial shadow, squashed by the camera elevation. |
 | `new_plot`, `style_axes`, `halo` | Data plots in the same palette, weights and fonts. |
@@ -138,6 +140,9 @@ An animation has to earn the reader's attention:
 - **Computed, not staged.** Drive it from the same simulation or geometry that the text verifies. If a marker shows a zero of a field, find the zero numerically in each frame.
 - **Same visual language as the stills.** Same palette, strokes and fonts. Hidden things hollow or dashed.
 - **Small.** 600 to 760 px wide, 70 to 100 frames, under about 2.5 MB. The kit builds one palette for the whole loop and reserves entries for the accent colours, which a plain median cut would wash out.
+- **Opaque moving strokes.** Pass `alpha=1.0` on anything that moves. A translucent stroke dithers into speckle under a GIF palette.
+- **Pick still times deliberately.** Avoid instants where a plane or a body is edge-on.
+- **Let the animation correct you.** Drawing the computed motion often contradicts the sketch in your head: a path that goes the other way round, a quantity that never reaches zero. Change the figure and the text, not the simulation.
 - **Check it.** Look at the filmstrip and at two or three frames pulled from the GIF. Colour and label problems show up there.
 
 ## 7. Clean Inline SVG Pattern (Web Textbooks)

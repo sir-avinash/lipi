@@ -320,6 +320,60 @@ class Scene:
         save(self.fig, path)
 
 
+# ------------------------------------------------------------ rigid bodies
+def box(s, center, R, dims, face_colors, zorder=40, lw=0.9):
+    """Shaded convex box. Draws only the faces that look at the camera.
+
+    `dims` are the full edge lengths along the body axes (columns of R).
+    `face_colors` maps (axis, sign) to a fill color. Returns the visible faces
+    as {(axis, sign): (face center, in-plane half vectors)} for decoration.
+    """
+    c = np.asarray(center, float)
+    half = 0.5 * np.asarray(dims, float)
+    seen = {}
+    for axis in range(3):
+        for sign in (1, -1):
+            n = sign * R[:, axis]
+            if n @ s.view <= 1e-9:
+                continue
+            a, b = [(half[k] * R[:, k]) for k in range(3) if k != axis]
+            fc = c + half[axis] * n
+            s.patch([fc + a + b, fc - a + b, fc - a - b, fc + a - b],
+                    color=face_colors[(axis, sign)], alpha=1.0, lw=lw, zorder=zorder + 2 * (n @ s.view))
+            seen[(axis, sign)] = (fc, a, b)
+    return seen
+
+
+def axis_through_box(s, center, R, dims, d, length, color, zorder=40, dashed=False, lw=1.5, head=0.11):
+    """Arrow from the center of a box along the unit vector d, with the right occlusion.
+
+    If d points toward the camera the arrow is drawn from where it leaves the box, on top.
+    If it points away it is drawn from the center, underneath the box. Returns the tip.
+    """
+    c = np.asarray(center, float)
+    half = 0.5 * np.asarray(dims, float)
+    tip = c + length * d
+    if d @ s.view > 0:
+        leave = min(half[k] / max(abs(d @ R[:, k]), 1e-9) for k in range(3))
+        s.arrow(c + min(leave, 0.95 * length) * d, tip, color=color, zorder=zorder + 4, dashed=dashed, lw=lw, head=head)
+    else:
+        s.arrow(c, tip, color=color, zorder=zorder - 4, dashed=dashed, lw=lw, head=head)
+    return tip
+
+
+def caption(s, text, color=INK, y=None, size=10):
+    """The line inside an animation frame that says what is happening now.
+
+    Drawn in the sans face, centered under the scene. The reader may arrive
+    mid-loop, so every frame carries one. `s` is a Scene with fixed limits.
+    """
+    xlim, ylim = s._lims
+    x = 0.5 * (xlim[0] + xlim[1])
+    y = ylim[0] + 0.06 * (ylim[1] - ylim[0]) if y is None else y
+    s.ax.text(x, y, text, fontsize=size, color=color, ha="center", va="center", zorder=Z_LABEL,
+              fontfamily="Source Sans 3", path_effects=halo())
+
+
 # ------------------------------------------------------------------- plots
 def new_plot(width=6.4, height=3.0, ncols=1, nrows=1, **kw):
     """Axes for data plots in the same visual language as the 3D scenes."""
