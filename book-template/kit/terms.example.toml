@@ -1,0 +1,19 @@
+# Rules for check_terms.py. One rule bans a variant and names the form the
+# glossary prescribes. Keep this file next to the glossary and change both together.
+
+[[rule]]
+pattern = 'inertial frame|spatial frame|fixed frame'
+use = 'world frame'
+ignore_case = true
+math = false
+
+[[rule]]
+pattern = '\^T\b|\^\{?\\top\}?'
+use = '\T (the transpose macro)'
+where = ['chapters']
+math = true
+
+[[rule]]
+pattern = '\blinearis'
+use = 'lineariz- (American spelling)'
+ignore_case = true

@@ -63,6 +63,7 @@ plt.rcParams.update({
     "mathtext.rm": "EB Garamond",
     "mathtext.it": "EB Garamond:italic",
     "mathtext.bf": "EB Garamond:bold",
+    "mathtext.cal": "EB Garamond:italic",
     "mathtext.fallback": "stix",
     "axes.unicode_minus": False,
 })
@@ -289,6 +290,10 @@ class Scene:
         style.update(kw)
         self.ax.text(x, y, text, **style)
         self._pts.append(np.array([[x - 0.75, y - 0.15], [x + 0.75, y + 0.15]]))
+
+    def pad_to(self, points):
+        """Grow the canvas to include these 3D points (room for wide labels)."""
+        self.project(points)
 
     # -- output
     def save(self, path, pad=0.12):

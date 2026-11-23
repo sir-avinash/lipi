@@ -52,7 +52,8 @@ nav ol.secs { margin: 0.35rem 0 0.5rem -1.7rem; padding-left: 0.8rem; border-lef
 nav ol.secs li { padding-left: 2.1rem; font-size: 0.74rem; }
 nav ol.secs li a { color: var(--muted); }
 nav ol.secs li a:hover { color: var(--accent); }
-.print-link { display: block; margin-top: 1.6rem; color: var(--muted); font-size: 0.72rem; }
+.print-link { display: block; margin-top: 1.6rem; color: var(--accent); font-size: 0.76rem; font-weight: 600; }
+.print-link.minor { margin-top: 0.4rem; color: var(--muted); font-weight: 400; font-size: 0.72rem; }
 .mobile-nav { display: none; }
 
 main {
@@ -170,13 +171,13 @@ ol.toc li.planned em { font-family: var(--sans); font-size: 0.68rem; margin-left
 .single-page article.chapter { margin-top: 5rem; }
 
 /* ---------- responsive ---------- */
-@media (max-width: 1280px) {
+@media screen and (max-width: 1280px) {
   .sidenote {
     float: none; display: block; width: auto; margin: 0.6rem 0 0.8rem 1.2rem;
     padding-left: 0.8rem; border-left: 2px solid var(--border);
   }
 }
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   html { font-size: 17px; }
   .sidebar { display: none; }
   .mobile-nav {
@@ -191,11 +192,15 @@ ol.toc li.planned em { font-family: var(--sans); font-size: 0.68rem; margin-left
   .running-head { margin-bottom: 1.6rem; }
 }
 
+@page { size: A4; margin: 20mm 24mm 22mm; }
 @media print {
-  html { font-size: 11pt; }
+  html { font-size: 10.5pt; }
   body { background: #fff; color: #000; }
   .sidebar, .mobile-nav, .pager, .running-head, .assets { display: none !important; }
   main { margin: 0; padding: 0; max-width: none; }
+  main > *, article > * { max-width: none; }
+  .book-title { margin: 30vh 0 0; break-after: page; }
+  figure img { max-height: 80mm; width: auto; max-width: 100%; margin: 0 auto; }
   .env, figure, .math-display, table { break-inside: avoid; }
   h2, h3 { break-after: avoid; }
   .single-page article.chapter { break-before: page; margin-top: 0; }

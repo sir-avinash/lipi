@@ -86,7 +86,7 @@ What the kit provides:
 | `ribbons` | Space curves that pass over and under each other (rings, linkages, knots). Pieces are depth-sorted and drawn over a paper understroke so the nearer strand visibly breaks the farther one. |
 | `patch`, `tangent_plane` | Flat translucent polygons from 3D corners. |
 | `arrow`, `frame`, `dot` | Vectors with filled heads sized in scene units, triads, markers (hollow for hidden points). |
-| `label`, `text2d` | Labels in outlined text with a paper-coloured halo. |
+| `label`, `text2d`, `pad_to` | Labels in outlined text with a paper-coloured halo. `pad_to` grows the canvas for wide labels. |
 | `shadow` | Soft radial shadow, squashed by the camera elevation. |
 | `new_plot`, `style_axes`, `halo` | Data plots in the same palette, weights and fonts. |
 | `rot`, `hat`, `unit`, `great_circle`, `small_circle`, `geodesic` | Geometry helpers. |
@@ -104,8 +104,10 @@ What the kit provides:
 1. Decide the one question the figure answers. Write the caption first.
 2. Choose the camera so that nothing important is edge-on or on the silhouette. For a plane, keep the view direction within about 60° of its normal. For a point on a sphere, keep it well inside the front hemisphere.
 3. Place geometry, then vectors, then labels. Offset labels with `dx`, `dy` in points.
-4. **Render and look.** Rasterise the SVG and inspect it at the size it will be printed. Check for: labels on top of strokes, labels clipped at the edge, planes seen edge-on, arrows hidden under surfaces, two objects overlapping by accident, a hidden line drawn solid.
-5. Fix and repeat. The first render is never right.
+4. Keep postfix `^\wedge`, `\mathcal` and a bare `\delta` out of labels: mathtext draws them badly in a text face. Use `\mathrm{\delta}` or words.
+5. For a wide label near the edge, call `Scene.pad_to(points)` so the canvas grows to hold it.
+6. **Render and look.** Rasterise the SVG and inspect it at the size it will be printed. Check for: labels on top of strokes, labels clipped at the edge, planes seen edge-on, arrows hidden under surfaces, two objects overlapping by accident, a hidden line drawn solid.
+7. Fix and repeat. The first render is never right.
 
 ## 6. Clean Inline SVG Pattern (Web Textbooks)
 

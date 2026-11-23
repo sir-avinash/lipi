@@ -43,18 +43,20 @@ python tools/build.py
 python tools/build.py --only 3 --out /tmp/draft
 ```
 
-Requirements: Python 3.11+, Pandoc 3.1+, Node.js. `--only` builds a subset and downgrades references to other chapters from errors to warnings. `--out` writes somewhere other than `docs/`, which matters when several writers build at once.
+Requirements: Python 3.11+, Pandoc 3.1+, Node.js, and Playwright with Chromium for the PDF. `--only` builds a subset and downgrades references to other chapters from errors to warnings. `--out` writes somewhere other than `docs/`, which matters when several writers build at once.
 
 ## What the kit contains
 
 | File | Role |
 | :-- | :-- |
-| `build.py` | Reads `book.toml`, runs two Pandoc passes per chapter (collect labels, then render), renders math, wraps pages in the template, writes `index.html`, `chNN.html`, and `book.html` (single page for print). Writes `.nojekyll`. |
+| `build.py` | Reads `book.toml`, runs two Pandoc passes per chapter (collect labels, then render), renders math, wraps pages in the template, writes `index.html`, `chNN.html`, appendices (`appA.html`), `book.html` (single page) and `book.pdf`. Each chapter header links to its notebook, verification script and skill. Writes `.nojekyll`. |
 | `filter.lua` | Pandoc Lua filter: numbers sections, callouts, figures, tables and labelled equations; resolves `[](#label)` references across chapters; turns footnotes into sidenotes; adds run-in callout headers and proof QED marks. |
 | `render_math.mjs` | Renders every math span with KaTeX on the server. Exits non-zero on a LaTeX error and prints the offending source. |
 | `style.css` | Paper palette, type scale, layout grid, callouts, sidenotes, tables, print rules. |
+| `make_pdf.cjs` | Prints the single-page edition to `book.pdf` with headless Chromium (Playwright). The site links to it as a download. `--no-pdf` skips it. |
+| `check_terms.py` | Enforces one vocabulary and one notation. Reads `terms.toml` and scans chapters, figure scripts, notebook sources and skills for banned variants. |
 | `make_notebook.py` | Converts a percent-format `.py` into an `.ipynb` and executes it, so a notebook that does not run cannot be committed. |
-| `book.example.toml` | Example configuration. |
+| `book.example.toml`, `terms.example.toml` | Example configuration and example terminology rules. |
 | `AUTHORING.template.md` | Rules for authors: markup, labels, figures, verification. Add the book's notation table. |
 
 ## Author-facing markup
@@ -85,6 +87,12 @@ See [](#thm2-name) and equation [](#eq2-name). ^[A sidenote.]
 - An empty link `[](#label)` becomes "Theorem 2.3", "(2.4)", "Figure 2.1", "Section 2.2", "Table 2.1" or "Chapter 2", and points to the right file.
 - Only labelled equations are numbered.
 - Tables are numbered by wrapping them in `::: {.table #tbl2-name}`.
+- Remarks and warnings can be referenced too: `[the pitfall](#warn2-name)`.
+- A chapter entry in `book.toml` whose `num` is a string (`"A"`) is an appendix.
+- A reference carries its own name. Write `[](#ch-x)`, not `Chapter [](#ch-x)`.
+- No math in section headings: they also appear in the sidebar.
+- Inside math, degrees are `^\circ`.
+- Code listings stay under 85 characters per line.
 - No level-1 headings in chapters. The title comes from front matter.
 - Shared TeX macros go in `[macros]` in `book.toml`.
 
@@ -107,6 +115,16 @@ A textbook is trusted for its equations. Treat them as code.
 - `verify/chNN.py` checks every identity at random points, every derivative against finite differences, and every derived model against an independent derivation (a symbolic library, a second formulation, a conservation law). It also computes every number the text quotes and writes them to a JSON file. The text is edited to match the script, not the reverse.
 - When a draft claim fails its check, change the claim. Record what changed.
 - `notebooks/src/chNN.py` is the notebook source in percent format. `make_notebook.py` builds and executes it. A notebook must run on a clean runtime, so it installs its own extras in the first cell and does not import from the repository.
+
+## One vocabulary, enforced
+
+Readers notice every inconsistency. A symbol that changes between the prose, a figure label and a notebook cell costs more trust than a typo.
+
+- Keep one **notation and glossary appendix** as the source of truth: conventions, symbol tables that link to the defining equation, an alphabetical glossary, and a short "we write X, not Y" table.
+- Encode each decision as a rule in `terms.toml` and run `check_terms.py`. It covers chapter text, figure scripts, notebook sources and skills, inside or outside math as the rule says.
+- Add a symbol or term to the appendix and the rules before using it.
+- Cite a work identically everywhere: same author format, same venue string, same link. Link every reference to its DOI, arXiv page or repository, and confirm each link before adding it.
+- When chapters are written in parallel, finish with one consistency pass by a single editor who reads everything, writes the appendix from what the chapters actually use, and fixes all files until the checker passes and every verification script still succeeds.
 
 ## Working with several writers
 

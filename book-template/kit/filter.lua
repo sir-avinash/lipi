@@ -117,6 +117,8 @@ local function handle_div(d)
       if group then
         label = name .. "\u{00a0}" .. nextnum(group)
         register(d.identifier, label)
+      elseif kind ~= "proof" then
+        register(d.identifier, "the " .. name:lower())
       end
       local head
       if kind == "proof" then
