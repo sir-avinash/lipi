@@ -17,6 +17,18 @@ notebook cell.
                                       # false = only outside, omitted = both
     ignore_case = true                # optional
     allow = ['inertial frame of the gyroscope']   # optional literal exceptions
+    code = true                       # optional: also check inside Markdown
+                                      # code spans and fences (skipped by default)
+
+`allow` entries are literal substrings: a match is ignored when its line
+contains one of them. `where` may also name 'verify'. Patterns are searched
+with re.MULTILINE, so `^` and `$` anchor to lines.
+
+Text between a line containing `terms:off` and the next line containing
+`terms:on` is never checked. Write the markers as comments
+(`<!-- terms:off -->` in Markdown, `# terms:off` in Python). The glossary uses
+them around its table of banned variants, and a chapter may use them around a
+quotation that has to keep its original wording.
 """
 from __future__ import annotations
 
@@ -35,6 +47,7 @@ SOURCES = {
 }
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]+\$", re.S)
 CODE = re.compile(r"```.*?```|`[^`\n]+`", re.S)
+OFF = re.compile(r"^[^\n]*terms:off.*?(?:^[^\n]*terms:on[^\n]*$|\Z)", re.S | re.M)
 
 
 def spans(text: str, regex: re.Pattern) -> list[tuple[int, int]]:
@@ -49,7 +62,7 @@ def main() -> None:
     cfg = tomllib.loads((ROOT / "terms.toml").read_text(encoding="utf-8"))
     problems = []
     for rule in cfg.get("rule", []):
-        flags = re.I if rule.get("ignore_case") else 0
+        flags = re.M | (re.I if rule.get("ignore_case") else 0)
         regex = re.compile(rule["pattern"], flags)
         for where in rule.get("where", ["chapters", "figures", "notebooks", "skills"]):
             folder, glob = SOURCES[where]
@@ -58,8 +71,11 @@ def main() -> None:
                 is_markdown = path.suffix == ".md"
                 math = spans(text, MATH)
                 code = spans(text, CODE) if is_markdown else []
+                off = spans(text, OFF)
                 for m in regex.finditer(text):
-                    if is_markdown and inside(m.start(), code):
+                    if inside(m.start(), off):
+                        continue
+                    if is_markdown and not rule.get("code") and inside(m.start(), code):
                         continue
                     if "math" in rule and inside(m.start(), math) != rule["math"]:
                         continue
