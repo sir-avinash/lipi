@@ -5,14 +5,16 @@
 
 Rules live in `terms.toml` at the repository root. Each rule bans a spelling,
 a synonym or a notation variant and names the form the glossary prescribes.
-The check covers chapter text, figure scripts, notebook sources and skills,
-so a symbol or a term cannot drift between the prose, a plot label and a
-notebook cell.
+The check covers chapter text, figure scripts, notebook sources, skills and the
+robot model library (`case_studies/**/*.py` and `case_studies/README.md`), so a
+symbol or a term cannot drift between the prose, a plot label, a notebook cell
+and a docstring of the library.
 
     [[rule]]
     pattern = 'inertial frame'        # Python regular expression
     use = 'world frame'               # what to write instead
-    where = ['chapters', 'notebooks', 'figures', 'skills']   # optional
+    where = ['chapters', 'notebooks', 'figures', 'skills', 'case_studies']
+                                      # optional: this list is the default
     math = false                      # optional: true = only inside $...$,
                                       # false = only outside, omitted = both
     ignore_case = true                # optional
@@ -21,7 +23,9 @@ notebook cell.
                                       # code spans and fences (skipped by default)
 
 `allow` entries are literal substrings: a match is ignored when its line
-contains one of them. `where` may also name 'verify'. Patterns are searched
+contains one of them. `where` may also name 'verify', which is not in the
+default list. A source may consist of several globs: 'case_studies' is the
+Python modules of the library and its README. Patterns are searched
 with re.MULTILINE, so `^` and `$` anchor to lines.
 
 Text between a line containing `terms:off` and the next line containing
@@ -40,12 +44,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = {
-    "chapters": ("chapters", "*.md"),
-    "figures": ("figures/src", "*.py"),
-    "notebooks": ("notebooks/src", "*.py"),
-    "skills": ("skills", "*/SKILL.md"),
-    "verify": ("verify", "*.py"),
+    "chapters": [("chapters", "*.md")],
+    "figures": [("figures/src", "*.py")],
+    "notebooks": [("notebooks/src", "*.py")],
+    "skills": [("skills", "*/SKILL.md")],
+    "verify": [("verify", "*.py")],
+    "case_studies": [("case_studies", "**/*.py"), ("case_studies", "README.md")],
 }
+DEFAULT_WHERE = ["chapters", "figures", "notebooks", "skills", "case_studies"]
 MATH = re.compile(r"\$\$.*?\$\$|\$[^$\n]+\$", re.S)
 CODE = re.compile(r"```.*?```|`[^`\n]+`", re.S)
 OFF = re.compile(r"^[^\n]*terms:off.*?(?:^[^\n]*terms:on[^\n]*$|\Z)", re.S | re.M)
@@ -66,9 +72,9 @@ def main() -> None:
     for rule in cfg.get("rule", []):
         flags = re.M | (re.I if rule.get("ignore_case") else 0)
         regex = re.compile(rule["pattern"], flags)
-        for where in rule.get("where", ["chapters", "figures", "notebooks", "skills"]):
-            folder, glob = SOURCES[where]
-            for path in sorted((ROOT / folder).glob(glob)):
+        for where in rule.get("where", DEFAULT_WHERE):
+            paths = sorted(p for folder, glob in SOURCES[where] for p in (ROOT / folder).glob(glob))
+            for path in paths:
                 text = path.read_text(encoding="utf-8")
                 is_markdown = path.suffix == ".md"
                 math = spans(text, MATH)

@@ -178,12 +178,15 @@ def main() -> None:
         only = {int(n) for n in sys.argv[sys.argv.index("--only") + 1].split(",")}
         os.environ["BOOK_LENIENT"] = "1"
     chapters = []
+    planned: dict[str, dict] = {}
     for part in cfg["part"]:
         for ch in part["chapter"]:
             if "file" not in ch or (only and isinstance(ch["num"], int) and ch["num"] not in only):
                 continue
             if not (ROOT / ch["file"]).exists():
                 print(f'note: {ch["file"]} not written yet; listed as planned', file=sys.stderr)
+                if ch.get("id"):
+                    planned[ch["id"]] = {"text": f'Chapter\u00a0{ch["num"]}', "file": "", "planned": True}
                 continue
             meta, body = split_front_matter((ROOT / ch["file"]).read_text(encoding="utf-8"))
             num = ch["num"]
@@ -213,6 +216,8 @@ def main() -> None:
             labels[key] = val
         labels[ch["id"]] = {"text": f'{ch["kind"]} {ch["num"]}', "file": ch["file"]}
 
+    for key, val in planned.items():
+        labels.setdefault(key, val)
     labels_path = tmp / "labels.json"
     labels_path.write_text(json.dumps(labels), encoding="utf-8")
 

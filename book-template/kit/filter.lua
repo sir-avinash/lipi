@@ -209,6 +209,11 @@ local function handle_inline(el)
   if el.t == "Link" and el.target:sub(1, 1) == "#" then
     local id = el.target:sub(2)
     local hit = known[id]
+    if hit and hit.planned then
+      -- A chapter that is listed but not written yet: name it, do not link it.
+      if #el.content == 0 then return pandoc.Str(hit.text) end
+      return pandoc.Span(el.content)
+    end
     if hit then
       if #el.content == 0 then el.content = {pandoc.Str(hit.text)} end
       if hit.file ~= this_file and not single then el.target = hit.file .. "#" .. id end
