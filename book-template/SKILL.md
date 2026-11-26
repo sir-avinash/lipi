@@ -33,6 +33,7 @@ book/
 
 ```bash
 npm install --prefix tools
+npx --prefix tools playwright install chromium
 ```
 
 ```bash
@@ -53,7 +54,7 @@ Requirements: Python 3.11+, Pandoc 3.1+, Node.js, and Playwright with Chromium f
 | `filter.lua` | Pandoc Lua filter: numbers sections, callouts, figures, tables and labelled equations; resolves `[](#label)` references across chapters; turns footnotes into sidenotes; adds run-in callout headers and proof QED marks. |
 | `render_math.mjs` | Renders every math span with KaTeX on the server. Exits non-zero on a LaTeX error and prints the offending source. |
 | `style.css` | Paper palette, type scale, layout grid, callouts, sidenotes, tables, print rules. |
-| `make_pdf.cjs` | Prints the single-page edition to `book.pdf` with headless Chromium (Playwright). The site links to it as a download. `--no-pdf` skips it. |
+| `make_pdf.cjs` | Prints the single-page edition to `book.pdf` with headless Chromium (Playwright). The site links to it as a download. `--no-pdf` skips it and keeps the existing PDF. |
 | `check_terms.py` | Enforces one vocabulary and one notation. Reads `terms.toml` and scans chapters, figure scripts, notebook sources and skills for banned variants. |
 | `make_notebook.py` | Converts a percent-format `.py` into an `.ipynb` and executes it, so a notebook that does not run cannot be committed. |
 | `book.example.toml`, `terms.example.toml` | Example configuration and example terminology rules. |

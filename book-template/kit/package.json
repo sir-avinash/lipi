@@ -2,5 +2,5 @@
   "name": "book-tools",
   "private": true,
   "type": "module",
-  "dependencies": { "katex": "^0.16.11" }
+  "dependencies": { "katex": "^0.16.11", "playwright": "1.63.0" }
 }

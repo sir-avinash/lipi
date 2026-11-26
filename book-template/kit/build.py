@@ -240,7 +240,11 @@ def main() -> None:
             source = f'<footer>{inline_md(ch["epigraph_source"], macros_path, tmp)}</footer>' if ch.get("epigraph_source") else ""
             ch["epigraph_html"] = f'<blockquote class="epigraph"><p>{inline_md(ch["epigraph"], macros_path, tmp)}</p>{source}</blockquote>'
 
+    kept_pdf = None
     if OUT.exists():
+        if "--no-pdf" in sys.argv and (OUT / "book.pdf").exists():
+            kept_pdf = tmp / "book.pdf.kept"
+            shutil.copy(OUT / "book.pdf", kept_pdf)
         shutil.rmtree(OUT)
     (OUT / "assets").mkdir(parents=True)
     (OUT / ".nojekyll").write_text("")
@@ -311,6 +315,8 @@ def main() -> None:
         fail("missing figures: " + ", ".join(sorted(missing)))
 
     # PDF edition, printed from the single-page edition.
+    if kept_pdf is not None:
+        shutil.copy(kept_pdf, OUT / "book.pdf")
     if "--no-pdf" not in sys.argv:
         proc = subprocess.run(["node", str(TOOLS / "make_pdf.cjs"), str(OUT / "book.html"), str(OUT / "book.pdf")],
                               capture_output=True, text=True)
