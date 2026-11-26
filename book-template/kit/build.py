@@ -181,7 +181,11 @@ def main() -> None:
     planned: dict[str, dict] = {}
     for part in cfg["part"]:
         for ch in part["chapter"]:
-            if "file" not in ch or (only and isinstance(ch["num"], int) and ch["num"] not in only):
+            if "file" not in ch:
+                continue
+            if only and isinstance(ch["num"], int) and ch["num"] not in only:
+                if ch.get("id"):  # left out of a partial build: name it, do not link it
+                    planned[ch["id"]] = {"text": f'Chapter\u00a0{ch["num"]}', "file": "", "planned": True}
                 continue
             if not (ROOT / ch["file"]).exists():
                 print(f'note: {ch["file"]} not written yet; listed as planned', file=sys.stderr)
